@@ -1,0 +1,133 @@
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-secondary mb-0">Gerenciamento de Produtos</h2>
+        <button class="btn btn-primary shadow-sm fw-semibold">
+            <i class="bi bi-plus-lg me-1"></i> Novo Produto
+        </button>
+    </div>
+
+    <div class="card mb-4 shadow-sm border-0 bg-light">
+        <div class="card-body">
+            <div class="row g-2">
+            <div class="col-md-8">
+                <div class="input-group">
+                <span class="input-group-text bg-white border-end-0 text-muted">
+                    <i class="bi bi-search"></i>
+                </span>
+                <input type="text" class="form-control border-start-0 ps-0" 
+                        placeholder="Digite o nome do produto ou comece a digitar uma categoria existente..." 
+                        [(ngModel)]="searchTerm" (keydown.enter)="onSearch()" list="categoriesDataList">
+                
+                <datalist id="categoriesDataList">
+                    <option *ngFor="let cat of existingCategories" [value]="cat"></option>
+                </datalist>
+                </div>
+            </div>
+            
+            <div class="col-md-2 d-grid">
+                <button class="btn btn-primary fw-semibold" (click)="onSearch()">
+                Pesquisar
+                </button>
+            </div>
+
+            <div class="col-md-2 d-grid">
+                <button class="btn btn-outline-secondary" [disabled]="!searchTerm" (click)="clearSearch()">
+                Limpar Filtro
+                </button>
+            </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-2 px-1">
+        <div class="d-flex align-items-center gap-2">
+        <label for="pageSizeSelect" class="text-muted small fw-semibold mb-0">Exibir:</label>
+        <select id="pageSizeSelect" class="form-select form-select-sm shadow-sm border-secondary-subtle" 
+                style="width: auto; min-width: 105px;" 
+                [ngModel]="pageSize" (ngModelChange)="onPageSizeChange($event)">
+            <option [ngValue]="20">20 itens</option>
+            <option [ngValue]="30">30 itens</option>
+            <option [ngValue]="50">50 itens</option>
+        </select>
+        </div>
+        
+        <div>
+        <span class="badge bg-secondary-subtle text-secondary border fw-medium px-3 py-2 rounded-pill">
+            Total: <strong>{{ totalElements }}</strong> registros
+        </span>
+        </div>
+    </div>
+
+    <div class="table-responsive shadow-sm rounded-3 mb-3">
+        <table class="table table-hover table-striped align-middle mb-0 bg-white">
+            <thead class="table-dark">
+                <tr>
+                <th style="width: 8%">ID</th>
+                <th style="width: 25%">Nome</th>
+                <th style="width: 30%">Descrição</th>
+                <th style="width: 12%">Preço</th>
+                <th style="width: 13%">Categoria</th>
+                <th style="width: 12%">Status</th>
+                <th style="width: 10%" class="text-center">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngIf="isLoading">
+                    <td colspan="7" class="text-center py-5">
+                    <div class="d-flex flex-column align-items-center justify-content-center gap-3">
+                        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                        <span class="visually-hidden">Carregando...</span>
+                        </div>
+                        <span class="text-muted fw-semibold">Buscando produtos no servidor...</span>
+                    </div>
+                    </td>
+                </tr>
+
+                <ng-container *ngIf="!isLoading">
+                    <tr *ngFor="let p of products">
+                    <td><span class="text-muted fw-semibold">#{{ p.id }}</span></td>
+                    <td class="fw-bold text-dark">{{ p.name }}</td>
+                    <td class="text-muted text-truncate" style="max-width: 250px;">{{ p.description || '---' }}</td>
+                    <td class="fw-semibold text-success">{{ p.price | currency:'BRL':'symbol':'1.2-2' }}</td>
+                    <td><span class="badge bg-light text-secondary border">{{ p.category }}</span></td>
+                    <td>
+                        <span class="badge rounded-pill" [ngClass]="p.active ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning'">
+                        {{ p.active ? 'Ativo' : 'Inativo' }}
+                        </span>
+                    </td>
+                    <td class="text-center">
+                        <div class="d-flex justify-content-center gap-1">
+                        <button class="btn btn-sm btn-outline-primary" title="Editar"><i class="bi bi-pencil-fill"></i></button>
+                        <button class="btn btn-sm btn-outline-danger" *ngIf="p.id" (click)="deleteProduct(p.id)" title="Excluir"><i class="bi bi-trash3-fill"></i></button>
+                        </div>
+                    </td>
+                    </tr>
+                </ng-container>
+
+                <tr *ngIf="!isLoading && products.length === 0">
+                    <td colspan="7" class="text-center py-5 text-muted fs-5">
+                    Nenhum produto cadastrado ou correspondente ao filtro.
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="d-flex justify-content-end mb-5">
+        <nav *ngIf="totalPages > 1">
+        <ul class="pagination pagination-sm mb-0 shadow-sm">
+            <li class="page-item" [class.disabled]="currentPage === 0">
+            <button class="page-link" (click)="$event.preventDefault(); changePage(currentPage - 1)">Anterior</button>
+            </li>
+            
+            <li class="page-item" *ngFor="let page of pageNumbers" [class.active]="page === currentPage">
+                <button class="page-link" (click)="$event.preventDefault(); changePage(page)">{{ page + 1 }}</button>
+            </li>
+
+            <li class="page-item" [class.disabled]="currentPage === totalPages - 1">
+                <button class="page-link" (click)="$event.preventDefault(); changePage(currentPage + 1)">Próximo</button>
+            </li>
+        </ul>
+        </nav>
+    </div>
+</div>

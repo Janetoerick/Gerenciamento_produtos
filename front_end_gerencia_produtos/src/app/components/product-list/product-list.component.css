@@ -1,0 +1,20 @@
+/* Customizações para estilização complementar das badges e paginação */
+.table th {
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.page-link {
+  cursor: pointer;
+}
+
+/* Sub-classes de cores sutis para o Status do Bootstrap */
+.bg-success-subtle {
+  background-color: #d1e7dd !important;
+  color: #0f5132 !important;
+}
+
+.bg-warning-subtle {
+  background-color: #fff3cd !important;
+  color: #664d03 !important;
+}

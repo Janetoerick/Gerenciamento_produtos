@@ -34,7 +34,7 @@ export class ProductService {
       params = params.set('category', category);
     }
 
-    return this.http.get<ProductPage>(this.API_URL, { params });
+    return this.http.get<ProductPage>(`${this.API_URL}/filter`, { params });
   }
 
   // Busca por ID individual
