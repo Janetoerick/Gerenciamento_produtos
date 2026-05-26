@@ -47,7 +47,6 @@ public class Product {
     @Column(length = 50, nullable = false)
     private String category;
 
-    @Column(nullable = false)
     private boolean active = true; // Inicializa como ativo por padrao
 	
     @Column(name = "created_at", length = 20, nullable = false, updatable = false)
