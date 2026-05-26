@@ -10,6 +10,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.inverview.project.dto.ProductCreateDTO;
+import com.inverview.project.dto.ProductUpdateDTO;
 import com.inverview.project.model.Product;
 import com.inverview.project.service.ProductService;
 
@@ -48,10 +50,12 @@ public class ProductController {
 	/* 
 	 * Adiciona um novo produto
 	 * POST ->  /
+	 * 
+	 * ProductDTO = {name, description, price, category}
 	 * */
 	@PostMapping
-    public ResponseEntity<Product> createProduct(@Valid @RequestBody Product product) {
-        Product savedProduct = productService.save(product);
+    public ResponseEntity<Product> createProduct(@Valid @RequestBody ProductCreateDTO productDTO) {
+        Product savedProduct = productService.save(productDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedProduct);
     }
 	
@@ -60,8 +64,8 @@ public class ProductController {
 	 * PUT ->  /:id
 	 * */
 	@PutMapping("/{id}")
-    public ResponseEntity<Product> updateProduct(@PathVariable Integer id, @Valid @RequestBody Product product) {
-		Product updatedProduct = productService.update(id, product);
+    public ResponseEntity<Product> updateProduct(@PathVariable Integer id, @Valid @RequestBody ProductUpdateDTO productDTO) {
+		Product updatedProduct = productService.update(id, productDTO);
         return ResponseEntity.ok(updatedProduct);
     }
 	

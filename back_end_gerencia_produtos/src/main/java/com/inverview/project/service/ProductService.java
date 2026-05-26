@@ -1,5 +1,7 @@
 package com.inverview.project.service;
 
+import com.inverview.project.dto.ProductCreateDTO;
+import com.inverview.project.dto.ProductUpdateDTO;
 import com.inverview.project.exception.ResourceNotFoundException;
 import com.inverview.project.model.Product;
 import com.inverview.project.repository.ProductRepository;
@@ -62,21 +64,28 @@ public class ProductService {
     }
 	
 	@Transactional
-	public Product save(Product product) {
+	public Product save(ProductCreateDTO dto) {
+		
+		Product product = new Product();
+        product.setName(dto.name());
+        product.setDescription(dto.description());
+        product.setPrice(dto.price());
+        product.setCategory(dto.category());
+        
 		return productRepository.save(product);
 	}
 	
 	@Transactional
-    public Product update(Integer id, Product updatedProduct) {
+    public Product update(Integer id, ProductUpdateDTO dto) {
 		
 		Product existingProduct = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Impossível atualizar. Produto com ID " + id + " não existe."));
 		
-		existingProduct.setName(updatedProduct.getName());
-        existingProduct.setDescription(updatedProduct.getDescription());
-        existingProduct.setPrice(updatedProduct.getPrice());
-        existingProduct.setCategory(updatedProduct.getCategory());
-        existingProduct.setActive(updatedProduct.isActive());
+		existingProduct.setName(dto.name());
+        existingProduct.setDescription(dto.description());
+        existingProduct.setPrice(dto.price());
+        existingProduct.setCategory(dto.category());
+        existingProduct.setActive(dto.active());
         
         return productRepository.save(existingProduct);
     }
