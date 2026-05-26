@@ -15,7 +15,7 @@
                     <i class="bi bi-search"></i>
                 </span>
                 <input type="text" class="form-control border-start-0 ps-0" 
-                        placeholder="Digite o nome do produto ou comece a digitar uma categoria existente..." 
+                        placeholder="Digite o nome do produto ou uma categoria existente..." 
                         [(ngModel)]="searchTerm" (keydown.enter)="onSearch()" list="categoriesDataList">
                 
                 <datalist id="categoriesDataList">
@@ -84,7 +84,7 @@
                 </tr>
 
                 <ng-container *ngIf="!isLoading">
-                    <tr *ngFor="let p of products">
+                    <tr *ngFor="let p of products" (click)="viewDetails(p)" style="cursor: pointer;" class="align-middle">
                     <td><span class="text-muted fw-semibold">#{{ p.id }}</span></td>
                     <td class="fw-bold text-dark">{{ p.name }}</td>
                     <td class="text-muted text-truncate" style="max-width: 250px;">{{ p.description || '---' }}</td>
@@ -98,13 +98,16 @@
                     <td class="text-center">
                         <div class="d-flex justify-content-center gap-1">
                         <button class="btn btn-sm btn-outline-primary" 
-                                (click)="editProduct(p)" 
+                                (click)="editProduct(p); $event.stopPropagation()" 
                                 data-bs-toggle="modal" 
                                 data-bs-target="#productModal" 
                                 title="Editar">
                             <i class="bi bi-pencil-fill"></i>
                         </button>
-                        <button class="btn btn-sm btn-outline-danger" *ngIf="p.id" (click)="deleteProduct(p.id)" title="Excluir"><i class="bi bi-trash3-fill"></i></button>
+                        <button class="btn btn-sm btn-outline-danger" *ngIf="p.id" 
+                                (click)="deleteProduct(p.id); $event.stopPropagation()" 
+                                title="Excluir">
+                            <i class="bi bi-trash3-fill"></i></button>
                         </div>
                     </td>
                     </tr>
@@ -207,13 +210,16 @@
 
                 </div>
 
-                <div class="modal-footer bg-light border-top-0 px-4">
-                <button type="button" class="btn btn-outline-secondary fw-semibold" data-bs-dismiss="modal" [disabled]="isSaving">Cancelar</button>
-                
-                <button type="submit" class="btn btn-success fw-semibold px-4" [disabled]="isSaving">
-                    <span *ngIf="isSaving" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                    {{ isSaving ? 'Salvando...' : 'Salvar Produto' }}
-                </button>
+                <div class="modal-footer border-top-0 d-flex w-100 gap-2 p-3">
+                    <button type="button" class="btn btn-outline-secondary fw-semibold py-2" style="width: 30%;" 
+                            (click)="handleCancel()">
+                        Cancelar
+                    </button>
+
+                    <button type="submit" class="btn btn-success fw-bold py-2" style="width: 60%;" [disabled]="isSaving">
+                        <span *ngIf="isSaving" class="spinner-border spinner-border-sm me-2"></span>
+                        {{ isEditing ? 'Atualizar' : 'Salvar Produto' }}
+                    </button>
                 </div>
             </form>
 
@@ -223,7 +229,7 @@
 
 
 <!-- MODAL DE CONFIRMACAO -->
-<button id="trigger-feedbackModal" d-none [hidden]="true" data-bs-toggle="modal" data-bs-target="#feedbackModal"></button>
+<button id="trigger-feedbackModal" class="d-none" [hidden]="true" data-bs-toggle="modal" data-bs-target="#feedbackModal"></button>
 
 <div class="modal fade" id="feedbackModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="feedbackModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-sm">
@@ -269,3 +275,60 @@
         </div>
     </div>
 </div>
+
+<!-- MODAL DE DETALHES DO PRODUTO -->
+<button id="trigger-detailModal" class="d-none" [hidden]="true" data-bs-toggle="modal" data-bs-target="#detailModal"></button>
+
+<div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-light border-0 py-3">
+        <h5 class="modal-title fw-bold text-dark" id="detailModalLabel">Detalhes do Produto</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      
+      <div class="modal-body p-4" *ngIf="selectedProduct">
+        <div class="row g-3">
+          <div class="col-12 text-center mb-3">
+            <span class="badge rounded-pill px-3 py-2" 
+                  [ngClass]="selectedProduct.active ? 'bg-success-subtle text-success border border-success' : 'bg-danger-subtle text-danger border border-danger'">
+              <i class="bi me-1" [ngClass]="selectedProduct.active ? 'bi-check-circle-fill' : 'bi-x-circle-fill'"></i>
+              {{ selectedProduct.active ? 'ATIVO NO SISTEMA' : 'PRODUTO INATIVO' }}
+            </span>
+          </div>
+          
+          <div class="col-12 border-bottom pb-2">
+            <label class="small text-secondary fw-bold text-uppercase italic">Nome do Produto</label>
+            <p class="fs-5 fw-bold mb-0 text-dark">{{ selectedProduct.name }}</p>
+          </div>
+
+          <div class="col-6 border-bottom pb-2">
+            <label class="small text-secondary fw-bold text-uppercase">Categoria</label>
+            <p class="mb-0 fw-semibold">{{ selectedProduct.category }}</p>
+          </div>
+
+          <div class="col-6 border-bottom pb-2 text-end">
+            <label class="small text-secondary fw-bold text-uppercase">Preço Unitário</label>
+            <p class="mb-0 fw-bold text-primary fs-5">{{ selectedProduct.price | currency:'BRL' }}</p>
+          </div>
+
+          <div class="col-12">
+            <label class="small text-secondary fw-bold text-uppercase">Descrição Detalhada</label>
+            <p class="text-muted small mb-0">{{ selectedProduct.description || 'Nenhuma descrição informada.' }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer bg-light border-0 p-3 d-flex gap-2">
+        <button type="button" class="btn btn-outline-primary flex-grow-1 fw-bold" (click)="handleEditFromDetails()">
+          <i class="bi bi-pencil-square me-2"></i> Editar
+        </button>
+        <button type="button" class="btn btn-outline-danger flex-grow-1 fw-bold" (click)="handleDeleteFromDetails()">
+          <i class="bi bi-trash3 me-2"></i> Excluir
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<button id="trigger-productModal" class="d-none" [hidden]="true" data-bs-toggle="modal" data-bs-target="#productModal"></button>

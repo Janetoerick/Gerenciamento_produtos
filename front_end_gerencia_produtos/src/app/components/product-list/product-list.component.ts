@@ -25,6 +25,9 @@ export class ProductListComponent implements OnInit{
   currentPage: number = 0;
   pageSize: number = 20;
 
+  // Referente a detalhes(visualizar) do produto
+  selectedProduct: Product | null = null;
+
   // Sinalizar para carregar
   isLoading: boolean = false;
 
@@ -139,6 +142,40 @@ export class ProductListComponent implements OnInit{
     this.existingCategories = Array.from(categoriesSet).filter(cat => cat && cat.trim() !== '');
   }
 
+
+  // --------------------------- METODOS REFERENTES A DETALHES DO PRODUTO ---------------------------
+
+  // Abre o modal de detalhes
+  viewDetails(product: Product): void {
+    this.selectedProduct = product;
+    this.openModal('detailModal');
+  }
+
+  // Fecha detalhes e abre edicao
+  handleEditFromDetails(): void {
+    if (this.selectedProduct) {
+      const productToEdit = { ...this.selectedProduct };
+      
+      this.closeModal('detailModal');
+      
+      setTimeout(() => {
+        this.editProduct(productToEdit);
+      }, 350);
+    }
+  }
+
+  // Fecha detalhes e abre exclusao
+  handleDeleteFromDetails(): void {
+    if (this.selectedProduct) {
+      const id = this.selectedProduct.id!;
+      this.closeModal('detailModal');
+      
+      setTimeout(() => {
+        this.deleteProduct(id);
+      }, 350);
+    }
+  }
+
   // --------------------------- METODOS REFERENTES A SALVAR PRODUTO E EDITAR ---------------------------
 
   // define os campos e regras do form
@@ -156,7 +193,8 @@ export class ProductListComponent implements OnInit{
     this.isEditing = true;
     this.productIdToEdit = product.id ?? null;
     
-    // Preenche o formulario com os dados do produto selecionado
+    this.productForm.reset();
+
     this.productForm.patchValue({
       name: product.name,
       description: product.description,
@@ -178,7 +216,6 @@ export class ProductListComponent implements OnInit{
     this.isSaving = true;
     const formValue = this.productForm.value;
     
-    // Monta o objeto limpando os espaços da categoria
     const productData: any = {
       name: formValue.name,
       description: formValue.description,
@@ -186,12 +223,10 @@ export class ProductListComponent implements OnInit{
       category: formValue.category ? formValue.category.trim() : ''
     };
 
-    // Se for edicao, coloca 'active' vindo do formulário
     if (this.isEditing) {
       productData.active = formValue.active;
     }
 
-    // Decide se vai disparar o PUT (update) ou POST (create)
     const request = (this.isEditing && this.productIdToEdit)
       ? this.productService.update(this.productIdToEdit, productData)
       : this.productService.create(productData);
@@ -202,21 +237,21 @@ export class ProductListComponent implements OnInit{
         this.closeModal('productModal');
         this.loadProducts();
         
-        // Configura o modal para o modo SUCESSO
         this.feedbackMode = 'success';
         this.feedbackTitle = 'Sucesso!';
         this.feedbackMessage = this.isEditing 
           ? `O produto "${res.name}" foi atualizado com sucesso.` 
           : `O produto "${res.name}" foi cadastrado com sucesso.`;
         
-        this.openModal('feedbackModal');
-        this.resetFormState();
+        setTimeout(() => {
+          this.openModal('feedbackModal');
+          this.resetFormState();
+        }, 450);
       },
       error: (err) => {
         this.isSaving = false;
         console.error('Erro ao processar produto:', err);
         
-        // Configura o modal para o modo ERRO
         this.feedbackMode = 'error';
         this.feedbackTitle = 'Ops, algo deu errado!';
         this.feedbackMessage = 'Não foi possível salvar as alterações. Verifique os dados ou a conexão.';
@@ -230,6 +265,13 @@ export class ProductListComponent implements OnInit{
     this.isEditing = false;
     this.productIdToEdit = null;
     this.productForm.reset();
+  }
+
+  handleCancel(): void {
+    this.closeModal('productModal');
+    setTimeout(() => {
+      this.resetFormState();
+    }, 450);
   }
 
   // ajuda na validacao visual
