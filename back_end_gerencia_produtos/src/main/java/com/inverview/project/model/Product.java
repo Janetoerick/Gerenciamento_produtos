@@ -53,6 +53,9 @@ public class Product {
     @Column(name = "created_at", length = 20, nullable = false, updatable = false)
 	private String createdAt;
 
+	public Product() {
+	}
+	
 	public Product(String name, String description, BigDecimal price, String category) {
 		super();
 		this.name = name;
