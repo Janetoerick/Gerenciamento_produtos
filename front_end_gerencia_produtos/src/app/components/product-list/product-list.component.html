@@ -1,7 +1,7 @@
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold text-secondary mb-0">Gerenciamento de Produtos</h2>
-        <button class="btn btn-primary shadow-sm fw-semibold">
+        <button class="btn btn-primary shadow-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#productModal">
             <i class="bi bi-plus-lg me-1"></i> Novo Produto
         </button>
     </div>
@@ -130,4 +130,97 @@
         </ul>
         </nav>
     </div>
+</div>
+
+<!-- PARTE DO FORM DE CRIACAO DE PRODUTO -->
+<div class="modal fade" id="productModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow-lg border-0">
+      
+      <div class="modal-header bg-dark text-white">
+        <h5 class="modal-title fw-bold" id="productModalLabel">Cadastrar Novo Produto</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <form [formGroup]="productForm" (ngSubmit)="onSubmit()">
+        <div class="modal-body px-4 py-3">
+          
+          <div class="mb-3">
+            <label for="formName" class="form-label small fw-bold text-secondary">Nome do Produto *</label>
+            <input type="text" id="formName" class="form-control" formControlName="name"
+                   [ngClass]="{'is-invalid': isFieldInvalid('name')}" placeholder="Ex: Teclado Mecânico">
+            <div class="invalid-feedback">O nome é obrigatório e deve ter entre 3 e 100 caracteres.</div>
+          </div>
+
+          <div class="mb-3">
+            <label for="formCategory" class="form-label small fw-bold text-secondary">Categoria *</label>
+            <input type="text" id="formCategory" class="form-control" formControlName="category"
+                   [ngClass]="{'is-invalid': isFieldInvalid('category')}" placeholder="Digite ou selecione uma existente..."
+                   list="formCategoriesDataList">
+            
+            <datalist id="formCategoriesDataList">
+              <option *ngFor="let cat of existingCategories" [value]="cat"></option>
+            </datalist>
+            <div class="invalid-feedback">A categoria é obrigatória.</div>
+          </div>
+
+          <div class="mb-3">
+            <label for="formPrice" class="form-label small fw-bold text-secondary">Preço (R$) *</label>
+            <div class="input-group">
+              <span class="input-group-text bg-light">R$</span>
+              <input type="number" step="0.01" id="formPrice" class="form-control" formControlName="price"
+                     [ngClass]="{'is-invalid': isFieldInvalid('price')}" placeholder="0,00">
+              <div class="invalid-feedback">O preço é obrigatório e deve ser maior que zero.</div>
+            </div>
+          </div>
+
+          <div class="mb-2">
+            <label for="formDescription" class="form-label small fw-bold text-secondary">Descrição (Opcional)</label>
+            <textarea id="formDescription" class="form-control" formControlName="description" rows="3"
+                      [ngClass]="{'is-invalid': isFieldInvalid('description')}" placeholder="Breve resumo sobre as características do produto..."></textarea>
+            <div class="invalid-feedback">A descrição não pode passar de 255 caracteres.</div>
+          </div>
+
+        </div>
+
+        <div class="modal-footer bg-light border-top-0 px-4">
+          <button type="button" class="btn btn-outline-secondary fw-semibold" data-bs-dismiss="modal" [disabled]="isSaving">Cancelar</button>
+          
+          <button type="submit" class="btn btn-success fw-semibold px-4" [disabled]="isSaving">
+            <span *ngIf="isSaving" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            {{ isSaving ? 'Salvando...' : 'Salvar Produto' }}
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+</div>
+
+<!-- INTERFACE DO ALERTA DE CONFIRMACAO -->
+<button id="trigger-feedbackModal" d-none [hidden]="true" data-bs-toggle="modal" data-bs-target="#feedbackModal"></button>
+
+<div class="modal fade" id="feedbackModal" tabindex="-1" aria-labelledby="feedbackModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content shadow-lg border-0 text-center">
+      
+      <div class="p-4 d-flex flex-column align-items-center justify-content-center">
+        <div class="rounded-circle d-flex align-items-center justify-content-center mb-3" 
+             [ngClass]="isFeedbackSuccess ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'"
+             style="width: 60px; height: 60px; fs-3: 1.5rem;">
+          <i class="bi" [ngClass]="isFeedbackSuccess ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill'" style="font-size: 2rem;"></i>
+        </div>
+        
+        <h4 class="modal-title fw-bold text-dark mb-2" id="feedbackModalLabel">{{ feedbackTitle }}</h4>
+        <p class="text-muted small mb-0 px-2">{{ feedbackMessage }}</p>
+      </div>
+
+      <div class="modal-footer bg-light border-top-0 d-block p-3">
+        <button type="button" class="btn w-100 fw-bold py-2" 
+                [ngClass]="isFeedbackSuccess ? 'btn-success' : 'btn-danger'" 
+                data-bs-dismiss="modal">OK</button>
+      </div>
+
+    </div>
+  </div>
 </div>

@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ProductService } from '../../services/product.service';
 import { Product, ProductPage } from '../../models/product.model';
 
@@ -8,7 +8,7 @@ import { MOCK_PRODUCTS } from '../../models/product.mock'; // PARA TESTES
 
 @Component({
   selector: 'app-product-list',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule],
   templateUrl: './product-list.component.html',
   styleUrl: './product-list.component.css'
 })
@@ -25,9 +25,21 @@ export class ProductListComponent implements OnInit{
   currentPage: number = 0;
   pageSize: number = 20;
 
+  // Sinalizar para carregar
   isLoading: boolean = false;
 
-  constructor(private productService: ProductService) {}
+  // Referentes a salvar produto
+  productForm!: FormGroup;
+  isSaving: boolean = false;
+
+  feedbackTitle: string = '';
+  feedbackMessage: string = '';
+  isFeedbackSuccess: boolean = true;
+
+  constructor(
+    private productService: ProductService,
+    private fb: FormBuilder
+  ) {}
 
   ngOnInit(): void {
     // this.totalElements = MOCK_PRODUCTS.length;
@@ -37,6 +49,7 @@ export class ProductListComponent implements OnInit{
     // this.existingCategories = Array.from(categoriesSet).filter(cat => cat);
 
     this.loadProducts();
+    this.initForm();
   }
 
   loadProducts(): void {
@@ -126,5 +139,83 @@ export class ProductListComponent implements OnInit{
         }
       });
     }
+  }
+
+  // --------------------------- METODOS REFERENTES A SALVAR PRODUTO   ---------------------------
+
+  // define os campos e regras do form
+  private initForm(): void {
+    this.productForm = this.fb.group({
+      name: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(100)]],
+      description: ['', [Validators.maxLength(255)]],
+      price: ['', [Validators.required, Validators.min(0.01)]],
+      category: ['', [Validators.required]] 
+    });
+  }
+
+  // metodo para salvar produto
+  onSubmit(): void {
+    if (this.productForm.invalid) {
+      this.productForm.markAllAsTouched();
+      return;
+    }
+
+    this.isSaving = true;
+    const formValue = this.productForm.value;
+    const newProduct = {
+      ...formValue,
+      category: formValue.category ? formValue.category.trim() : ''
+    };
+
+    this.productService.create(newProduct).subscribe({
+      next: (createdProduct) => {
+        this.isSaving = false;
+        this.productForm.reset();
+        this.loadProducts();
+        
+        // fecha o modal de cadastro
+        this.closeModal('productModal');
+
+        // configura o feedback de SUCESSO
+        this.feedbackTitle = 'Sucesso!';
+        this.feedbackMessage = `O produto "${createdProduct.name}" foi cadastrado com sucesso.`;
+        this.isFeedbackSuccess = true;
+
+        // Abre o modal de feedback
+        this.openModal('feedbackModal');
+      },
+      error: (err) => {
+        this.isSaving = false;
+        console.error('Erro ao cadastrar produto:', err);
+        
+        // configura o feedback de ERRO
+        this.feedbackTitle = 'Ops, algo deu errado!';
+        this.feedbackMessage = 'Não foi possível salvar o produto. Verifique a conexão com o servidor ou se os dados estão corretos.';
+        this.isFeedbackSuccess = false;
+
+        // abre o modal de feedback
+        this.openModal('feedbackModal');
+      }
+    });
+  }
+
+  // ajuda na validacao visual
+  isFieldInvalid(fieldName: string): boolean {
+    const field = this.productForm.get(fieldName);
+    return !!(field && field.invalid && (field.dirty || field.touched));
+  }
+
+  // fecha o modal
+  private closeModal(modalId: string): void {
+    const modalElement = document.getElementById(modalId);
+    const closeButton = modalElement?.querySelector('.btn-close') as HTMLElement;
+    closeButton?.click();
+  }
+
+  // abre o modal
+  private openModal(modalId: string): void {
+    // Dispara o clique em um botão invisível que colocaremos no HTML
+    const trigger = document.getElementById(`trigger-${modalId}`);
+    trigger?.click();
   }
 }
