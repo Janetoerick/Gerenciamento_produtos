@@ -1,5 +1,6 @@
 package com.inverview.project.service;
 
+import com.inverview.project.exception.ResourceNotFoundException;
 import com.inverview.project.model.Product;
 import com.inverview.project.repository.ProductRepository;
 
@@ -26,8 +27,9 @@ public class ProductService {
 	}
 	
 	@Transactional(readOnly = true)
-	public Optional<Product> findById(Integer id) {
-		return productRepository.findById(id);
+	public Product findById(Integer id) {
+		return productRepository.findById(id)
+				.orElseThrow(() -> new ResourceNotFoundException("Produto com ID " + id + " não foi encontrado."));
 	}
 	
 	@Transactional(readOnly = true)
@@ -65,16 +67,18 @@ public class ProductService {
 	}
 	
 	@Transactional
-    public Optional<Product> update(Integer id, Product updatedProduct) {
-        return productRepository.findById(id).map(existingProduct -> {
-            existingProduct.setName(updatedProduct.getName());
-            existingProduct.setDescription(updatedProduct.getDescription());
-            existingProduct.setPrice(updatedProduct.getPrice());
-            existingProduct.setCategory(updatedProduct.getCategory());
-            existingProduct.setActive(updatedProduct.isActive());
+    public Product update(Integer id, Product updatedProduct) {
+		
+		Product existingProduct = productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Impossível atualizar. Produto com ID " + id + " não existe."));
+		
+		existingProduct.setName(updatedProduct.getName());
+        existingProduct.setDescription(updatedProduct.getDescription());
+        existingProduct.setPrice(updatedProduct.getPrice());
+        existingProduct.setCategory(updatedProduct.getCategory());
+        existingProduct.setActive(updatedProduct.isActive());
         
-            return productRepository.save(existingProduct);
-        });
+        return productRepository.save(existingProduct);
     }
 	
 	@Transactional
