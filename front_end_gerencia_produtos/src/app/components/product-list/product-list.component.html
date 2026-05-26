@@ -132,7 +132,7 @@
     </div>
 </div>
 
-<!-- PARTE DO FORM DE CRIACAO DE PRODUTO -->
+<!-- MODAL DO FORM DE CRIACAO DE PRODUTO -->
 <div class="modal fade" id="productModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content shadow-lg border-0">
@@ -197,18 +197,27 @@
   </div>
 </div>
 
-<!-- INTERFACE DO ALERTA DE CONFIRMACAO -->
+
+<!-- MODAL DE CONFIRMACAO -->
 <button id="trigger-feedbackModal" d-none [hidden]="true" data-bs-toggle="modal" data-bs-target="#feedbackModal"></button>
 
-<div class="modal fade" id="feedbackModal" tabindex="-1" aria-labelledby="feedbackModalLabel" aria-hidden="true">
+<div class="modal fade" id="feedbackModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="feedbackModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-sm">
     <div class="modal-content shadow-lg border-0 text-center">
       
-      <div class="p-4 d-flex flex-column align-items-center justify-content-center">
-        <div class="rounded-circle d-flex align-items-center justify-content-center mb-3" 
-             [ngClass]="isFeedbackSuccess ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'"
-             style="width: 60px; height: 60px; fs-3: 1.5rem;">
-          <i class="bi" [ngClass]="isFeedbackSuccess ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill'" style="font-size: 2rem;"></i>
+      <div class="p-4 d-flex flex-column align-items-center justify-content-center pb-2">
+        
+        <div class="rounded-circle d-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;"
+             [ngClass]="{
+               'bg-success-subtle text-success': feedbackMode === 'success',
+               'bg-danger-subtle text-danger': feedbackMode === 'error' || feedbackMode === 'confirm-delete'
+             }">
+          
+          <i class="bi" [ngClass]="{
+             'bi-check-circle-fill': feedbackMode === 'success',
+             'bi-exclamation-triangle-fill': feedbackMode === 'error',
+             'bi-trash3-fill': feedbackMode === 'confirm-delete'
+          }" style="font-size: 1.8rem;"></i>
         </div>
         
         <h4 class="modal-title fw-bold text-dark mb-2" id="feedbackModalLabel">{{ feedbackTitle }}</h4>
@@ -216,9 +225,21 @@
       </div>
 
       <div class="modal-footer bg-light border-top-0 d-block p-3">
-        <button type="button" class="btn w-100 fw-bold py-2" 
-                [ngClass]="isFeedbackSuccess ? 'btn-success' : 'btn-danger'" 
+        
+        <button *ngIf="feedbackMode !== 'confirm-delete'" type="button" class="btn w-100 fw-bold py-2" 
+                [ngClass]="feedbackMode === 'success' ? 'btn-success' : 'btn-danger'" 
                 data-bs-dismiss="modal">OK</button>
+
+        <div *ngIf="feedbackMode === 'confirm-delete'" class="d-grid gap-2">
+          <button type="button" class="btn btn-danger fw-bold py-2 w-100" [disabled]="isSaving" (click)="confirmDelete()">
+            <span *ngIf="isSaving" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            Sim, Excluir
+          </button>
+          <button type="button" class="btn btn-outline-secondary fw-semibold py-2 w-100" data-bs-dismiss="modal" [disabled]="isSaving">
+            Cancelar
+          </button>
+        </div>
+
       </div>
 
     </div>

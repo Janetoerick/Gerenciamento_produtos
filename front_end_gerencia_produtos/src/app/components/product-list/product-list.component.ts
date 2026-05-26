@@ -32,9 +32,13 @@ export class ProductListComponent implements OnInit{
   productForm!: FormGroup;
   isSaving: boolean = false;
 
+  feedbackMode: 'success' | 'error' | 'confirm-delete' = 'success';
   feedbackTitle: string = '';
   feedbackMessage: string = '';
   isFeedbackSuccess: boolean = true;
+
+  // Referente a delecao do produto
+  productIdToDelete: number | null = null;
 
   constructor(
     private productService: ProductService,
@@ -130,17 +134,6 @@ export class ProductListComponent implements OnInit{
     this.existingCategories = Array.from(categoriesSet).filter(cat => cat && cat.trim() !== '');
   }
 
-  // Aciona a delecao do produto
-  deleteProduct(id: number): void {
-    if (confirm('Tem certeza que deseja excluir permanentemente este produto?')) {
-      this.productService.delete(id).subscribe({
-        next: () => {
-          this.loadProducts();
-        }
-      });
-    }
-  }
-
   // --------------------------- METODOS REFERENTES A SALVAR PRODUTO   ---------------------------
 
   // define os campos e regras do form
@@ -177,6 +170,7 @@ export class ProductListComponent implements OnInit{
         this.closeModal('productModal');
 
         // configura o feedback de SUCESSO
+        this.feedbackMode = 'success';
         this.feedbackTitle = 'Sucesso!';
         this.feedbackMessage = `O produto "${createdProduct.name}" foi cadastrado com sucesso.`;
         this.isFeedbackSuccess = true;
@@ -189,6 +183,7 @@ export class ProductListComponent implements OnInit{
         console.error('Erro ao cadastrar produto:', err);
         
         // configura o feedback de ERRO
+        this.feedbackMode = 'error';
         this.feedbackTitle = 'Ops, algo deu errado!';
         this.feedbackMessage = 'Não foi possível salvar o produto. Verifique a conexão com o servidor ou se os dados estão corretos.';
         this.isFeedbackSuccess = false;
@@ -217,5 +212,50 @@ export class ProductListComponent implements OnInit{
     // Dispara o clique em um botão invisível que colocaremos no HTML
     const trigger = document.getElementById(`trigger-${modalId}`);
     trigger?.click();
+  }
+
+  // --------------------------- METODOS REFERENTES A DELETAR PRODUTO   ---------------------------
+
+  // Aciona a delecao do produto
+  deleteProduct(id: number): void {
+    this.productIdToDelete = id;
+    
+    // Transforma o modal em modo de CONFIRMAÇÃO DE EXCLUSÃO
+    this.feedbackMode = 'confirm-delete';
+    this.feedbackTitle = 'Tem certeza?';
+    this.feedbackMessage = 'Esta ação não poderá ser desfeita. O produto será removido permanentemente.';
+    
+    this.openModal('feedbackModal');
+  }
+
+  confirmDelete(): void {
+    if (this.productIdToDelete === null) return;
+
+    this.isSaving = true;
+
+    this.productService.delete(this.productIdToDelete).subscribe({
+      next: () => {
+        this.isSaving = false;
+        this.closeModal('feedbackModal');
+        this.loadProducts();
+
+        this.feedbackMode = 'success';
+        this.feedbackTitle = 'Excluído!';
+        this.feedbackMessage = 'O produto foi removido permanentemente do sistema.';
+        
+        this.productIdToDelete = null;
+      },
+      error: (err) => {
+        this.isSaving = false;
+        this.closeModal('feedbackModal');
+        console.error('Erro ao deletar produto:', err);
+
+        this.feedbackMode = 'error';
+        this.feedbackTitle = 'Não foi possível excluir';
+        this.feedbackMessage = 'Ocorreu um erro interno no servidor ao tentar remover este produto.';
+        
+        this.productIdToDelete = null;
+      }
+    });
   }
 }
