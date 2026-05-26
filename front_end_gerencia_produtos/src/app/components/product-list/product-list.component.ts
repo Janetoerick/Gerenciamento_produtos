@@ -95,14 +95,16 @@ export class ProductListComponent implements OnInit{
         // Atualiza a lista de sugestões do autocomplete com base no banco
         this.updateExistingCategories();
 
+        this.isLoading = false;
       },
       error: (err) => {
         console.error('Erro ao buscar produtos da API', err);
-        
+
+        this.isLoading = false;
       }
     });
 
-    this.isLoading = false;
+    
   }
 
   // Aciona o filtro
