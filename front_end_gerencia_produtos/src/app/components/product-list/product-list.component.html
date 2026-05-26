@@ -1,7 +1,7 @@
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold text-secondary mb-0">Gerenciamento de Produtos</h2>
-        <button class="btn btn-primary shadow-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#productModal">
+        <button (click)="resetFormState()" class="btn btn-primary shadow-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#productModal">
             <i class="bi bi-plus-lg me-1"></i> Novo Produto
         </button>
     </div>
@@ -97,7 +97,13 @@
                     </td>
                     <td class="text-center">
                         <div class="d-flex justify-content-center gap-1">
-                        <button class="btn btn-sm btn-outline-primary" title="Editar"><i class="bi bi-pencil-fill"></i></button>
+                        <button class="btn btn-sm btn-outline-primary" 
+                                (click)="editProduct(p)" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#productModal" 
+                                title="Editar">
+                            <i class="bi bi-pencil-fill"></i>
+                        </button>
                         <button class="btn btn-sm btn-outline-danger" *ngIf="p.id" (click)="deleteProduct(p.id)" title="Excluir"><i class="bi bi-trash3-fill"></i></button>
                         </div>
                     </td>
@@ -115,86 +121,104 @@
 
     <div class="d-flex justify-content-end mb-5">
         <nav *ngIf="totalPages > 1">
-        <ul class="pagination pagination-sm mb-0 shadow-sm">
-            <li class="page-item" [class.disabled]="currentPage === 0">
-            <button class="page-link" (click)="$event.preventDefault(); changePage(currentPage - 1)">Anterior</button>
-            </li>
-            
-            <li class="page-item" *ngFor="let page of pageNumbers" [class.active]="page === currentPage">
-                <button class="page-link" (click)="$event.preventDefault(); changePage(page)">{{ page + 1 }}</button>
-            </li>
+            <ul class="pagination pagination-sm mb-0 shadow-sm">
+                <li class="page-item" [class.disabled]="currentPage === 0">
+                <button class="page-link" (click)="$event.preventDefault(); changePage(currentPage - 1)">Anterior</button>
+                </li>
+                
+                <li class="page-item" *ngFor="let page of pageNumbers" [class.active]="page === currentPage">
+                    <button class="page-link" (click)="$event.preventDefault(); changePage(page)">{{ page + 1 }}</button>
+                </li>
 
-            <li class="page-item" [class.disabled]="currentPage === totalPages - 1">
-                <button class="page-link" (click)="$event.preventDefault(); changePage(currentPage + 1)">Próximo</button>
-            </li>
-        </ul>
+                <li class="page-item" [class.disabled]="currentPage === totalPages - 1">
+                    <button class="page-link" (click)="$event.preventDefault(); changePage(currentPage + 1)">Próximo</button>
+                </li>
+            </ul>
         </nav>
     </div>
 </div>
 
 <!-- MODAL DO FORM DE CRIACAO DE PRODUTO -->
 <div class="modal fade" id="productModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content shadow-lg border-0">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg border-0">
       
-      <div class="modal-header bg-dark text-white">
-        <h5 class="modal-title fw-bold" id="productModalLabel">Cadastrar Novo Produto</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-
-      <form [formGroup]="productForm" (ngSubmit)="onSubmit()">
-        <div class="modal-body px-4 py-3">
-          
-          <div class="mb-3">
-            <label for="formName" class="form-label small fw-bold text-secondary">Nome do Produto *</label>
-            <input type="text" id="formName" class="form-control" formControlName="name"
-                   [ngClass]="{'is-invalid': isFieldInvalid('name')}" placeholder="Ex: Teclado Mecânico">
-            <div class="invalid-feedback">O nome é obrigatório e deve ter entre 3 e 100 caracteres.</div>
-          </div>
-
-          <div class="mb-3">
-            <label for="formCategory" class="form-label small fw-bold text-secondary">Categoria *</label>
-            <input type="text" id="formCategory" class="form-control" formControlName="category"
-                   [ngClass]="{'is-invalid': isFieldInvalid('category')}" placeholder="Digite ou selecione uma existente..."
-                   list="formCategoriesDataList">
-            
-            <datalist id="formCategoriesDataList">
-              <option *ngFor="let cat of existingCategories" [value]="cat"></option>
-            </datalist>
-            <div class="invalid-feedback">A categoria é obrigatória.</div>
-          </div>
-
-          <div class="mb-3">
-            <label for="formPrice" class="form-label small fw-bold text-secondary">Preço (R$) *</label>
-            <div class="input-group">
-              <span class="input-group-text bg-light">R$</span>
-              <input type="number" step="0.01" id="formPrice" class="form-control" formControlName="price"
-                     [ngClass]="{'is-invalid': isFieldInvalid('price')}" placeholder="0,00">
-              <div class="invalid-feedback">O preço é obrigatório e deve ser maior que zero.</div>
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title fw-bold" id="productModalLabel">
+                    {{ isEditing ? 'Editar Produto' : 'Cadastrar Novo Produto' }}
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-          </div>
 
-          <div class="mb-2">
-            <label for="formDescription" class="form-label small fw-bold text-secondary">Descrição (Opcional)</label>
-            <textarea id="formDescription" class="form-control" formControlName="description" rows="3"
-                      [ngClass]="{'is-invalid': isFieldInvalid('description')}" placeholder="Breve resumo sobre as características do produto..."></textarea>
-            <div class="invalid-feedback">A descrição não pode passar de 255 caracteres.</div>
-          </div>
+            <form [formGroup]="productForm" (ngSubmit)="onSubmit()">
+                <div class="modal-body px-4 py-3">
+                
+                    <div class="mb-3">
+                        <label for="formName" class="form-label small fw-bold text-secondary">Nome do Produto *</label>
+                        <input type="text" id="formName" class="form-control" formControlName="name"
+                            [ngClass]="{'is-invalid': isFieldInvalid('name')}" placeholder="Ex: Teclado Mecânico">
+                        <div class="invalid-feedback">O nome é obrigatório e deve ter entre 3 e 100 caracteres.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="formCategory" class="form-label small fw-bold text-secondary">Categoria *</label>
+                        <input type="text" id="formCategory" class="form-control" formControlName="category"
+                            [ngClass]="{'is-invalid': isFieldInvalid('category')}" placeholder="Digite ou selecione uma existente..."
+                            list="formCategoriesDataList">
+                        
+                        <datalist id="formCategoriesDataList">
+                        <option *ngFor="let cat of existingCategories" [value]="cat"></option>
+                        </datalist>
+                        <div class="invalid-feedback">A categoria é obrigatória.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="formPrice" class="form-label small fw-bold text-secondary">Preço (R$) *</label>
+                        <div class="input-group">
+                        <span class="input-group-text bg-light">R$</span>
+                        <input type="number" step="0.01" id="formPrice" class="form-control" formControlName="price"
+                                [ngClass]="{'is-invalid': isFieldInvalid('price')}" placeholder="0,00">
+                        <div class="invalid-feedback">O preço é obrigatório e deve ser maior que zero.</div>
+                        </div>
+                    </div>
+
+                    <div class="mb-2">
+                        <label for="formDescription" class="form-label small fw-bold text-secondary">Descrição (Opcional)</label>
+                        <textarea id="formDescription" class="form-control" formControlName="description" rows="3"
+                                [ngClass]="{'is-invalid': isFieldInvalid('description')}" placeholder="Breve resumo sobre as características do produto..."></textarea>
+                        <div class="invalid-feedback">A descrição não pode passar de 255 caracteres.</div>
+                    </div>
+
+                    <div class="mb-3 text-center" *ngIf="isEditing">
+                        <label class="form-label small fw-bold text-secondary d-block mb-2">Status do Produto</label>
+                        
+                        <div class="d-flex flex-column align-items-center justify-content-center gap-2">
+                            
+                            <div class="form-check form-switch p-0 ms-0 m-0">
+                            <input class="form-check-input float-none m-0" type="checkbox" role="switch" id="formActive" 
+                                    formControlName="active" style="width: 3rem; height: 1.5rem; cursor: pointer;">
+                            </div>
+                            
+                            <label class="form-check-label fw-bold small" [ngClass]="productForm.get('active')?.value ? 'text-success' : 'text-danger'" for="formActive">
+                            {{ productForm.get('active')?.value ? 'PRODUTO ATIVO' : 'PRODUTO INATIVO' }}
+                            </label>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer bg-light border-top-0 px-4">
+                <button type="button" class="btn btn-outline-secondary fw-semibold" data-bs-dismiss="modal" [disabled]="isSaving">Cancelar</button>
+                
+                <button type="submit" class="btn btn-success fw-semibold px-4" [disabled]="isSaving">
+                    <span *ngIf="isSaving" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    {{ isSaving ? 'Salvando...' : 'Salvar Produto' }}
+                </button>
+                </div>
+            </form>
 
         </div>
-
-        <div class="modal-footer bg-light border-top-0 px-4">
-          <button type="button" class="btn btn-outline-secondary fw-semibold" data-bs-dismiss="modal" [disabled]="isSaving">Cancelar</button>
-          
-          <button type="submit" class="btn btn-success fw-semibold px-4" [disabled]="isSaving">
-            <span *ngIf="isSaving" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-            {{ isSaving ? 'Salvando...' : 'Salvar Produto' }}
-          </button>
-        </div>
-      </form>
-
     </div>
-  </div>
 </div>
 
 
@@ -202,46 +226,46 @@
 <button id="trigger-feedbackModal" d-none [hidden]="true" data-bs-toggle="modal" data-bs-target="#feedbackModal"></button>
 
 <div class="modal fade" id="feedbackModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="feedbackModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-sm">
-    <div class="modal-content shadow-lg border-0 text-center">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content shadow-lg border-0 text-center">
       
-      <div class="p-4 d-flex flex-column align-items-center justify-content-center pb-2">
+            <div class="p-4 d-flex flex-column align-items-center justify-content-center pb-2">
         
-        <div class="rounded-circle d-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;"
-             [ngClass]="{
-               'bg-success-subtle text-success': feedbackMode === 'success',
-               'bg-danger-subtle text-danger': feedbackMode === 'error' || feedbackMode === 'confirm-delete'
-             }">
-          
-          <i class="bi" [ngClass]="{
-             'bi-check-circle-fill': feedbackMode === 'success',
-             'bi-exclamation-triangle-fill': feedbackMode === 'error',
-             'bi-trash3-fill': feedbackMode === 'confirm-delete'
-          }" style="font-size: 1.8rem;"></i>
+                <div class="rounded-circle d-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;"
+                    [ngClass]="{
+                    'bg-success-subtle text-success': feedbackMode === 'success',
+                    'bg-danger-subtle text-danger': feedbackMode === 'error' || feedbackMode === 'confirm-delete'
+                    }">
+                
+                <i class="bi" [ngClass]="{
+                    'bi-check-circle-fill': feedbackMode === 'success',
+                    'bi-exclamation-triangle-fill': feedbackMode === 'error',
+                    'bi-trash3-fill': feedbackMode === 'confirm-delete'
+                }" style="font-size: 1.8rem;"></i>
+                </div>
+        
+                <h4 class="modal-title fw-bold text-dark mb-2" id="feedbackModalLabel">{{ feedbackTitle }}</h4>
+                <p class="text-muted small mb-0 px-2">{{ feedbackMessage }}</p>
+            </div>
+
+            <div class="modal-footer bg-light border-top-0 d-block p-3">
+                
+                <button *ngIf="feedbackMode !== 'confirm-delete'" type="button" class="btn w-100 fw-bold py-2" 
+                        [ngClass]="feedbackMode === 'success' ? 'btn-success' : 'btn-danger'" 
+                        data-bs-dismiss="modal">OK</button>
+
+                <div *ngIf="feedbackMode === 'confirm-delete'" class="d-grid gap-2">
+                <button type="button" class="btn btn-danger fw-bold py-2 w-100" [disabled]="isSaving" (click)="confirmDelete()">
+                    <span *ngIf="isSaving" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    Sim, Excluir
+                </button>
+                <button type="button" class="btn btn-outline-secondary fw-semibold py-2 w-100" data-bs-dismiss="modal" [disabled]="isSaving">
+                    Cancelar
+                </button>
+                </div>
+
+            </div>
+
         </div>
-        
-        <h4 class="modal-title fw-bold text-dark mb-2" id="feedbackModalLabel">{{ feedbackTitle }}</h4>
-        <p class="text-muted small mb-0 px-2">{{ feedbackMessage }}</p>
-      </div>
-
-      <div class="modal-footer bg-light border-top-0 d-block p-3">
-        
-        <button *ngIf="feedbackMode !== 'confirm-delete'" type="button" class="btn w-100 fw-bold py-2" 
-                [ngClass]="feedbackMode === 'success' ? 'btn-success' : 'btn-danger'" 
-                data-bs-dismiss="modal">OK</button>
-
-        <div *ngIf="feedbackMode === 'confirm-delete'" class="d-grid gap-2">
-          <button type="button" class="btn btn-danger fw-bold py-2 w-100" [disabled]="isSaving" (click)="confirmDelete()">
-            <span *ngIf="isSaving" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-            Sim, Excluir
-          </button>
-          <button type="button" class="btn btn-outline-secondary fw-semibold py-2 w-100" data-bs-dismiss="modal" [disabled]="isSaving">
-            Cancelar
-          </button>
-        </div>
-
-      </div>
-
     </div>
-  </div>
 </div>

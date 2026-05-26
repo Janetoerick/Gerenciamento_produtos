@@ -32,6 +32,11 @@ export class ProductListComponent implements OnInit{
   productForm!: FormGroup;
   isSaving: boolean = false;
 
+  // Referente a edicao
+  isEditing: boolean = false;
+  productIdToEdit: number | null = null;
+
+  // Referente ao Modal de feedback
   feedbackMode: 'success' | 'error' | 'confirm-delete' = 'success';
   feedbackTitle: string = '';
   feedbackMessage: string = '';
@@ -134,7 +139,7 @@ export class ProductListComponent implements OnInit{
     this.existingCategories = Array.from(categoriesSet).filter(cat => cat && cat.trim() !== '');
   }
 
-  // --------------------------- METODOS REFERENTES A SALVAR PRODUTO   ---------------------------
+  // --------------------------- METODOS REFERENTES A SALVAR PRODUTO E EDITAR ---------------------------
 
   // define os campos e regras do form
   private initForm(): void {
@@ -142,8 +147,25 @@ export class ProductListComponent implements OnInit{
       name: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(100)]],
       description: ['', [Validators.maxLength(255)]],
       price: ['', [Validators.required, Validators.min(0.01)]],
-      category: ['', [Validators.required]] 
+      category: ['', [Validators.required]],
+      active: [true]
     });
+  }
+
+  editProduct(product: Product): void {
+    this.isEditing = true;
+    this.productIdToEdit = product.id ?? null;
+    
+    // Preenche o formulario com os dados do produto selecionado
+    this.productForm.patchValue({
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      category: product.category,
+      active: product.active
+    });
+
+    this.openModal('productModal');
   }
 
   // metodo para salvar produto
@@ -155,43 +177,59 @@ export class ProductListComponent implements OnInit{
 
     this.isSaving = true;
     const formValue = this.productForm.value;
-    const newProduct = {
-      ...formValue,
+    
+    // Monta o objeto limpando os espaços da categoria
+    const productData: any = {
+      name: formValue.name,
+      description: formValue.description,
+      price: formValue.price,
       category: formValue.category ? formValue.category.trim() : ''
     };
 
-    this.productService.create(newProduct).subscribe({
-      next: (createdProduct) => {
+    // Se for edicao, coloca 'active' vindo do formulário
+    if (this.isEditing) {
+      productData.active = formValue.active;
+    }
+
+    // Decide se vai disparar o PUT (update) ou POST (create)
+    const request = (this.isEditing && this.productIdToEdit)
+      ? this.productService.update(this.productIdToEdit, productData)
+      : this.productService.create(productData);
+
+    request.subscribe({
+      next: (res) => {
         this.isSaving = false;
-        this.productForm.reset();
+        this.closeModal('productModal');
         this.loadProducts();
         
-        // fecha o modal de cadastro
-        this.closeModal('productModal');
-
-        // configura o feedback de SUCESSO
+        // Configura o modal para o modo SUCESSO
         this.feedbackMode = 'success';
         this.feedbackTitle = 'Sucesso!';
-        this.feedbackMessage = `O produto "${createdProduct.name}" foi cadastrado com sucesso.`;
-        this.isFeedbackSuccess = true;
-
-        // Abre o modal de feedback
+        this.feedbackMessage = this.isEditing 
+          ? `O produto "${res.name}" foi atualizado com sucesso.` 
+          : `O produto "${res.name}" foi cadastrado com sucesso.`;
+        
         this.openModal('feedbackModal');
+        this.resetFormState();
       },
       error: (err) => {
         this.isSaving = false;
-        console.error('Erro ao cadastrar produto:', err);
+        console.error('Erro ao processar produto:', err);
         
-        // configura o feedback de ERRO
+        // Configura o modal para o modo ERRO
         this.feedbackMode = 'error';
         this.feedbackTitle = 'Ops, algo deu errado!';
-        this.feedbackMessage = 'Não foi possível salvar o produto. Verifique a conexão com o servidor ou se os dados estão corretos.';
-        this.isFeedbackSuccess = false;
-
-        // abre o modal de feedback
+        this.feedbackMessage = 'Não foi possível salvar as alterações. Verifique os dados ou a conexão.';
+        
         this.openModal('feedbackModal');
       }
     });
+  }
+
+  resetFormState(): void {
+    this.isEditing = false;
+    this.productIdToEdit = null;
+    this.productForm.reset();
   }
 
   // ajuda na validacao visual
