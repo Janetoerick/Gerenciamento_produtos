@@ -20,6 +20,9 @@ services:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "dev_user", "-pdev_password"]
       timeout: 5s
       retries: 5
+      start_period: 20s
+    networks:
+      - app-network
 
   # --- BACKEND (SPRING BOOT) ---
   backend:
@@ -46,7 +49,7 @@ services:
       dockerfile: Dockerfile
     container_name: products_frontend
     ports:
-      - "80:80"
+      - "8081:80"
     depends_on:
       - backend
     networks:
